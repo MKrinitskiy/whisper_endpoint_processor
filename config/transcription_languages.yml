@@ -1,0 +1,7 @@
+available_transcription_langs: ["ru", "en"]
+
+ru:
+  name: Russian
+
+en:
+  name: English
