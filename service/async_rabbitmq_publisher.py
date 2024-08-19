@@ -29,14 +29,14 @@ class RabbitMQPublisher(object):
     ROUTING_KEY = QUEUE+'.text'
 
     def __init__(self,
-                 departing_tasks_queue: Queue,
+                 departing_reports_queue: Queue,
                  threading_lock:Lock,
                  logger:Logger = None):
         """Setup the example publisher object, passing in the URL we will use
         to connect to RabbitMQ.
 
-        :param Queue departing_tasks_queue: The queue from which the publisher will get tasks to send to RabbitMQ
-        :param Lock threading_lock: The lock to be used to synchronize access to the departing_tasks_queue
+        :param Queue departing_reports_queue: The queue from which the publisher will get tasks to send to RabbitMQ
+        :param Lock threading_lock: The lock to be used to synchronize access to the departing_reports_queue
         :param Logger logger: The logger to be used by the publisher
         """
         self.logger = logger or logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class RabbitMQPublisher(object):
                                                          connection_attempts=15,
                                                          heartbeat=3600)
 
-        self.departing_tasks_queue = departing_tasks_queue
+        self.departing_reports_queue = departing_reports_queue
         self.threading_lock = threading_lock
 
     def connect(self):
@@ -242,9 +242,9 @@ class RabbitMQPublisher(object):
 
         self.logger.info('Issuing consumer related RPC commands')
         self.enable_delivery_confirmations()
-        self.logger.info('Waiting for messages in departing_tasks_queue to send to RabbitMQ')
-        task_dict = self.departing_tasks_queue.get(block=True)
-        self.logger.info('Got a message from departing_tasks_queue to send to RabbitMQ')
+        self.logger.info('Waiting for messages in departing_reports_queue to send to RabbitMQ')
+        task_dict = self.departing_reports_queue.get(block=True)
+        self.logger.info('Got a message from departing_reports_queue to send to RabbitMQ')
         self.publish_message(task_dict)
 
     def enable_delivery_confirmations(self):
@@ -333,7 +333,7 @@ class RabbitMQPublisher(object):
                                           content_type='application/json')
         
         if message is None:
-            message = self.departing_tasks_queue.get(block=True)
+            message = self.departing_reports_queue.get(block=True)
 
         self._channel.basic_publish(self.EXCHANGE, self.ROUTING_KEY,
                                     json.dumps(message, ensure_ascii=False),

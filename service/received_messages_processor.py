@@ -130,13 +130,15 @@ def received_messages_processor(tokill: ThreadKiller,
             logger.info(f"Processing the message...")
 
             #region Received message example
-            # Received message:  b'{"user_id": 600906,
-            #                       "task_id": "f3dc4aae-9e40-4637-afcd-14632974e74f",
-            #                       "filename": "MK-voice-example-002.mp3",
-            #                       "bucket": "whisper-telegram-bot",
-            #                       "file_path": "190f416f78ca4539878e7f1a7008f5b9.mp3",
-            #                       "transcription_lang": "ru",
-            #                       "queue_name": "task_queue"}'
+            # Received message:  '{'user_id': 600906,
+            #                      'task_id': '29aa85af-a830-4346-b6e0-2d19f40cfab1',
+            #                      'filename': 'MK-voice-example-003.mp3',
+            #                      'minio_bucket': 'whisper-telegram-bot',
+            #                      'file_path': '3d1f882767864f269470ea9558022892.mp3',
+            #                      'transcription_lang': 'ru',
+            #                      'queue_name': 'task_queue',
+            #                      'status': 'queued',
+            #                      'start_time': '2024-08-18T00:44:48'}'
             #endregion
             
             # Extract the file path from the message
@@ -144,7 +146,7 @@ def received_messages_processor(tokill: ThreadKiller,
 
             file_path = message["file_path"]
             logger.info(f"File path to get and process: {file_path}")
-            bucket_name = message["bucket"]
+            bucket_name = message["minio_bucket"]
             logger.info(f"Bucket name to get the file from: {bucket_name}")
 
             # Download and process the file
@@ -156,6 +158,11 @@ def received_messages_processor(tokill: ThreadKiller,
 
                 # Send the results to Minio
                 results_sent = send_results_to_minio(download_and_processing_result['txt_fn'], download_and_processing_result['srt_fn'])
+                # {"result": True,
+                #  "txt_fn": unique_filename + '.txt',
+                #  "srt_fn": unique_filename + '.srt'}
+
+
                 if results_sent['result']:
                     logger.info(f"Results sent to minio successfully.")
                     logger.info(f"Reporting the task being done to RabbitMQ.")
@@ -178,12 +185,13 @@ def received_messages_processor(tokill: ThreadKiller,
                 logger.error(f"Failed to download or process the file.")
                 continue
 
-            # TODO: download the file from minio
-            # TODO: pass the file to the model.
+            # TODO: download the file from minio - DONE
+            # TODO: pass the file to the model
             # We need to decide whether the model should be run here or in another container.
-            # TODO: save the results in minio as TXT and SRT files
-            # TODO: report the task being done to rabbitmq (reporting_messages_queue).
+            # TODO: save the results in minio as TXT and SRT files - DONE
+            # TODO: report the task being done to rabbitmq (reporting_messages_queue) - DONE
             # The bot will then send the user the results.
+            # TODO: send the reporting message to task manager bot via RabbitMQ
 
         except Empty:
             continue

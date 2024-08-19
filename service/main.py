@@ -1,3 +1,4 @@
+from asyncio import tasks
 import io, os
 import logging
 import asyncio
@@ -36,7 +37,10 @@ arriving_thread_killer = ThreadKiller()
 arriving_thread_killer.set_tokill(False)
 
 EnsureDirectoryExists('./logs')
-logging.basicConfig(filename='./logs/service.log', level=logging.INFO)
+logging.basicConfig(filename='./logs/service.log',
+                    level=logging.INFO,
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%Y-%m-%dT%H:%M:%S')
 logger = logging.getLogger(__name__)
 
 #region minio setup
