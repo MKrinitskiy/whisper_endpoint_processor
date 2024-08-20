@@ -30,10 +30,13 @@ def threaded_arriving_tasks_rmq_consumer(tokill,
     arriving_tasks_queue is a limited size thread-safe Queue instance.
     """
 
-    logger = logging.getLogger("arriving_messages")
-    logger.info("Threaded arriving messages RabbitMQ consumer started")
+    logger = logging.getLogger("arriving_tasks")
+    logger.info("Thread for RabbitMQ consumer started")
 
     rmq_consumer = ReconnectingRabbitMQConsumer(arriving_messages_queue,
                                                 arriving_messages_queue_threading_lock,
                                                 logger)
+    
+    logger.info("Starting the RabbitMQ consumer")
     rmq_consumer.run()
+    logger.info("Started the RabbitMQ consumer")

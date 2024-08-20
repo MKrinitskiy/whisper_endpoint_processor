@@ -3,17 +3,21 @@ version: "3"
 services:
   wprocessor:
     container_name: wprocessor
-    stdin_open: true # docker run -i
-    tty: true        # docker run -t
-    command: python3 service/main.py
-    restart: always
+    image: wprocessor
     build:
       context: "."
       dockerfile: Dockerfile
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    command: python3 /code/service/main.py
+    # command: python3 /code/test.py
+    # command: /bin/bash
+    restart: always
     environment:
       RABBITMQ_HOSTNAME: ${RABBITMQ_HOSTNAME}
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+
       ASSIGNING_TASKS_RABBITMQ_QUEUE_NAME: ${ASSIGNING_TASKS_RABBITMQ_QUEUE_NAME}
       TASKS_REPORTS_RABBITMQ_QUEUE_NAME: ${TASKS_REPORTS_RABBITMQ_QUEUE_NAME}
       MINIO_HOSTNAME: ${MINIO_HOSTNAME}
@@ -21,5 +25,8 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
+    working_dir: /code
+    # working_dir: /whisper
     volumes:
       - ./:/code
+      # - /raid:/app

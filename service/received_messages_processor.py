@@ -35,6 +35,38 @@ def received_messages_processor(tokill: ThreadKiller,
     logger = logging.getLogger("received_messages_processor")
     logger.info("Threaded received_messages_processor started")
 
+    def process_file(file_path):
+        # TODO: Pass the file to the model for processing
+        logger.info(f"File to process exists: {DoesPathExistAndIsFile(file_path)}")
+        if not DoesPathExistAndIsFile(file_path):
+            logger.error(f"File does not exist: {file_path}")
+            return False
+        logger.info(f"Starting to process the file: {file_path}")
+
+        # mock TXT file creation
+        txt_fn = f'/tmp/{os.path.basename(file_path)}.txt'
+        txt_tempfile = tempfile.NamedTemporaryFile(delete=False)
+        os.rename(txt_tempfile.name, txt_fn)
+        with open(txt_fn, 'w') as f:
+            f.write("This is a mock text file.")
+        logger.info(f"TXT file created: {txt_fn}")
+
+        # mock SRT file creation
+        srt_fn = f'/tmp/{os.path.basename(file_path)}.srt'
+        srt_tempfile = tempfile.NamedTemporaryFile(delete=False)
+        os.rename(srt_tempfile.name, srt_fn)
+        with open(srt_fn, 'w') as f:
+            f.write("1\n00:00:00,000 --> 00:00:01,000\nThis is a mock SRT file.")
+        logger.info(f"SRT file created: {srt_fn}")
+
+
+        # TODO: Save the results in Minio as TXT and SRT files
+        logger.info(f"The file {file_path} has been processed.")
+        # TODO: Report the task being done to RabbitMQ (reporting_messages_queue)
+        return txt_fn, srt_fn
+    
+    
+
     def download_and_process_file_from_minio(file_path, bucket_name):
         logger.info(f"Starting to download and process file {file_path}")
         try:
@@ -66,37 +98,7 @@ def received_messages_processor(tokill: ThreadKiller,
         except Exception as e:
             logger.error(f"An error occurred while downloading the file from Minio: {e}")
             return {'result': False, 'txt_fn': None, 'srt_fn': None}
-
-
-    def process_file(file_path):
-        # TODO: Pass the file to the model for processing
-        logger.info(f"File to process exists: {DoesPathExistAndIsFile(file_path)}")
-        if not DoesPathExistAndIsFile(file_path):
-            logger.error(f"File does not exist: {file_path}")
-            return False
-        logger.info(f"Starting to process the file: {file_path}")
-
-        # mock TXT file creation
-        txt_fn = f'/tmp/{os.path.basename(file_path)}.txt'
-        txt_tempfile = tempfile.NamedTemporaryFile(delete=False)
-        os.rename(txt_tempfile.name, txt_fn)
-        with open(txt_fn, 'w') as f:
-            f.write("This is a mock text file.")
-        logger.info(f"TXT file created: {txt_fn}")
-
-        # mock SRT file creation
-        srt_fn = f'/tmp/{os.path.basename(file_path)}.srt'
-        srt_tempfile = tempfile.NamedTemporaryFile(delete=False)
-        os.rename(srt_tempfile.name, srt_fn)
-        with open(srt_fn, 'w') as f:
-            f.write("1\n00:00:00,000 --> 00:00:01,000\nThis is a mock SRT file.")
-        logger.info(f"SRT file created: {srt_fn}")
-
-
-        # TODO: Save the results in Minio as TXT and SRT files
-        logger.info(f"The file {file_path} has been processed.")
-        # TODO: Report the task being done to RabbitMQ (reporting_messages_queue)
-        return txt_fn, srt_fn
+    
 
 
     def send_results_to_minio(txt_fn: str, srt_fn: str):

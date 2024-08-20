@@ -137,3 +137,6 @@ docker-compose.dev.yml
 mongodb/
 /.vscode
 .DS_Store
+
+docker
+docker/docker_build_commands.txt

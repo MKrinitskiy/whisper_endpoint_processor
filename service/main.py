@@ -81,37 +81,40 @@ user_tasks = {}
 def main():
     logger.info("Starting service.")
 
-    # region reporting_messages_thread
-    reporting_thread = Thread(target=reporting_messaging_thread,
-                                        args=(departing_thread_killer,
-                                              reporting_messages_queue,
-                                              reporting_messages_queue_threading_lock))
-    reporting_thread.start()
-    # endregion
-    
-
-
     #region arriving_messages_thread
     # this thread reads the messages arriving from RabbitMQ
-    logger.info("Starting the thread reading the messages arriving.")
+    logger.info("Starting the thread to read incoming messages that describe tasks.")
     arriving_messages_thread = Thread(target=threaded_arriving_tasks_rmq_consumer,
                                       args=(arriving_thread_killer,
                                             arriving_messages_queue,
                                             arriving_messages_queue_threading_lock))
     arriving_messages_thread.start()
-    logger.info("Thread reading the messages arriving started.")
+    logger.info("Started the thread the thread to read incoming messages that describe tasks.")
     #endregion
 
 
 
     #region received_messages_processing_thread
+    logger.info("Starting the thread actually processing tasks.")
     received_messages_processing_thread = Thread(target=received_messages_processor,
                                                  args=(arriving_thread_killer,
                                                        arriving_messages_queue,
                                                        reporting_messages_queue,
                                                        s3))
     received_messages_processing_thread.start()
+    logger.info("Started the thread actually processing tasks.")
     #endregion
+
+
+    # region reporting_messages_thread
+    logger.info("Starting the thread sending the reports to the bot.")
+    reporting_thread = Thread(target=reporting_messaging_thread,
+                                        args=(departing_thread_killer,
+                                              reporting_messages_queue,
+                                              reporting_messages_queue_threading_lock))
+    reporting_thread.start()
+    logger.info("Thread sending the reports started.")
+    # endregion
 
 
     logger.info("Service started.")

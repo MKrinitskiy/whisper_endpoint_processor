@@ -2,6 +2,7 @@ import functools
 import logging
 from re import T
 import time
+from venv import logger
 from numpy import block
 import pika
 from pika.exchange_type import ExchangeType
@@ -58,12 +59,15 @@ class RabbitMQConsumer(object):
 
         :rtype: pika.SelectConnection
         """
-        self.logger.info('Connecting to %s', self.conn_parameters.host)
-        return pika.SelectConnection(
-            self.conn_parameters,
-            on_open_callback=self.on_connection_open,
-            on_open_error_callback=self.on_connection_open_error,
-            on_close_callback=self.on_connection_closed)
+
+        self.logger.info('I0002: pika connecting to %s', self.conn_parameters.host)
+        conn = pika.SelectConnection(self.conn_parameters,
+                                     on_open_callback=self.on_connection_open,
+                                     on_open_error_callback=self.on_connection_open_error,
+                                     on_close_callback=self.on_connection_closed)
+        self.logger.info('I0003: pika connected to %s', self.conn_parameters.host)
+
+        return conn
 
     def close_connection(self):
         self._consuming = False
@@ -81,7 +85,7 @@ class RabbitMQConsumer(object):
         :param pika.SelectConnection _unused_connection: The connection
 
         """
-        self.logger.info('Connection opened')
+        self.logger.info('RMQ: Connection opened')
         self.open_channel()
 
     def on_connection_open_error(self, _unused_connection, err):
@@ -92,7 +96,7 @@ class RabbitMQConsumer(object):
         :param Exception err: The error
 
         """
-        self.logger.error('Connection open failed: %s', err)
+        self.logger.error('RMQ: Connection open failed: %s', err)
         self.reconnect()
 
     def on_connection_closed(self, _unused_connection, reason):
@@ -360,9 +364,7 @@ class RabbitMQConsumer(object):
 
         """
         self._consuming = False
-        self.logger.info(
-            'RabbitMQ acknowledged the cancellation of the consumer: %s',
-            userdata)
+        self.logger.info('RabbitMQ acknowledged the cancellation of the consumer: %s', userdata)
         self.close_channel()
 
     def close_channel(self):
@@ -379,12 +381,18 @@ class RabbitMQConsumer(object):
 
         """
         try:
+            self.logger.info('I0001: run procedure for RMQ consumer: step 1 started')
             self._connection = self.connect()
+            self.logger.info('I0004: run procedure for RMQ consumer: step 1 finished')
         except Exception as e:
             self.logger.error('Error while connecting to RabbitMQ server:\n %s', e)
         
+        self.logger.info('I0005: outside the try block')
+
         try:
+            self.logger.info('I0006: run procedure for RMQ consumer: step 2 started')
             self._connection.ioloop.start()
+            self.logger.info('I0007: run procedure for RMQ consumer: step 2 finished')
         except Exception as e:
             self.logger.error('Error while starting IOLoop:\n %s', e)
         
@@ -420,11 +428,16 @@ class ReconnectingRabbitMQConsumer(object):
 
         credentials = pika.PlainCredentials(os.getenv('RABBITMQ_USERNAME', 'guest'),
                                             os.getenv('RABBITMQ_PASSWORD', 'guest'))
+        self.logger.info('RABBITMQ_HOSTNAME: %s', os.getenv('RABBITMQ_HOSTNAME', 'localhost'))
+        self.logger.info('RABBITMQ_USERNAME: %s', os.getenv('RABBITMQ_USERNAME', 'guest'))
+        self.logger.info('RABBITMQ_PASSWORD: %s', os.getenv('RABBITMQ_PASSWORD', 'guest'))
+
         host=os.getenv('RABBITMQ_HOSTNAME', 'localhost')
         self.conn_parameters = pika.ConnectionParameters(host=host,
                                                          credentials=credentials,
                                                          connection_attempts=15,
-                                                         heartbeat=3600)
+                                                         heartbeat=3600,
+                                                         port=5672)
         try:
             self._consumer = RabbitMQConsumer(self.conn_parameters,
                                             self.arriving_messages_queue,
