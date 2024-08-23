@@ -11,6 +11,7 @@ from queue import Empty, Queue
 
 from numpy import block
 from regex import F
+# from zmq import device
 from thread_killer import ThreadKiller
 from async_rabbitmq_consumer import ReconnectingRabbitMQConsumer
 from async_rabbitmq_publisher import RabbitMQPublisher
@@ -21,6 +22,9 @@ import tempfile
 import base64
 from minio import Minio
 from minio.error import S3Error
+
+from diarizer import Diarizer
+from types import SimpleNamespace
 
 
 
@@ -42,27 +46,96 @@ def received_messages_processor(tokill: ThreadKiller,
             logger.error(f"File does not exist: {file_path}")
             return False
         logger.info(f"Starting to process the file: {file_path}")
+        
 
-        # mock TXT file creation
+        #region CLI arguments
+        # Initialize parser
+        # parser = argparse.ArgumentParser()
+        # parser.add_argument(
+        #     "-a", "--audio", help="name of the target audio file", required=True
+        # )
+        # parser.add_argument(
+        #     "--no-stem",
+        #     action="store_false",
+        #     dest="stemming",
+        #     default=True,
+        #     help="Disables source separation."
+        #     "This helps with long files that don't contain a lot of music.",
+        # )
+        # parser.add_argument(
+        #     "--suppress_numerals",
+        #     action="store_true",
+        #     dest="suppress_numerals",
+        #     default=False,
+        #     help="Suppresses Numerical Digits."
+        #     "This helps the diarization accuracy but converts all digits into written text.",
+        # )
+
+        # parser.add_argument(
+        #     "--whisper-model",
+        #     dest="model_name",
+        #     default="medium.en",
+        #     help="name of the Whisper model to use",
+        # )
+        # parser.add_argument(
+        #     "--batch-size",
+        #     type=int,
+        #     dest="batch_size",
+        #     default=8,
+        #     help="Batch size for batched inference, reduce if you run out of memory, set to 0 for non-batched inference",
+        # )
+
+        # parser.add_argument(
+        #     "--language",
+        #     type=str,
+        #     default=None,
+        #     choices=whisper_langs,
+        #     help="Language spoken in the audio, specify None to perform language detection",
+        # )
+
+        # parser.add_argument(
+        #     "--device",
+        #     dest="device",
+        #     default="cuda" if torch.cuda.is_available() else "cpu",
+        #     help="if you have a GPU use 'cuda', otherwise 'cpu'",
+        # )
+
+        # args = parser.parse_args()
+        #endregion CLI arguments
+        args = SimpleNamespace(stemming=True,
+                               suppress_numerals=False,
+                               model_name='large-v3',
+                               batch_size=8,
+                               language='ru',
+                               device='cuda')
+        drz = Diarizer(args)
+        
         txt_fn = f'/tmp/{os.path.basename(file_path)}.txt'
         txt_tempfile = tempfile.NamedTemporaryFile(delete=False)
         os.rename(txt_tempfile.name, txt_fn)
-        with open(txt_fn, 'w') as f:
-            f.write("This is a mock text file.")
-        logger.info(f"TXT file created: {txt_fn}")
-
-        # mock SRT file creation
         srt_fn = f'/tmp/{os.path.basename(file_path)}.srt'
         srt_tempfile = tempfile.NamedTemporaryFile(delete=False)
         os.rename(srt_tempfile.name, srt_fn)
-        with open(srt_fn, 'w') as f:
-            f.write("1\n00:00:00,000 --> 00:00:01,000\nThis is a mock SRT file.")
-        logger.info(f"SRT file created: {srt_fn}")
+        drz.process_file(file_path, txt_fn, srt_fn)
+
+        del drz
 
 
-        # TODO: Save the results in Minio as TXT and SRT files
+        # mock TXT file creation
+        # with open(txt_fn, 'w') as f:
+        #     f.write("This is a mock text file.")
+        # logger.info(f"TXT file created: {txt_fn}")
+
+        # mock SRT file creation
+        
+        # with open(srt_fn, 'w') as f:
+        #     f.write("1\n00:00:00,000 --> 00:00:01,000\nThis is a mock SRT file.")
+        # logger.info(f"SRT file created: {srt_fn}")
+
+
+        # TODO: Save the results in Minio as TXT and SRT files - DONE
         logger.info(f"The file {file_path} has been processed.")
-        # TODO: Report the task being done to RabbitMQ (reporting_messages_queue)
+        # TODO: Report the task being done to RabbitMQ (reporting_messages_queue) - DONE
         return txt_fn, srt_fn
     
     

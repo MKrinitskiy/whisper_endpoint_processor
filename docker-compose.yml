@@ -29,4 +29,6 @@ services:
     # working_dir: /whisper
     volumes:
       - ./:/code
-      # - /raid:/app
+      - /whisper
+      - ./models-cache:/root/.cache
+      # - /raid/mk/whisper:/whisper

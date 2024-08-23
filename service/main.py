@@ -1,3 +1,7 @@
+import sys
+sys.path.append('/whisper/')
+sys.path.append('./whisper-diarization/')
+
 from asyncio import tasks
 import io, os
 import logging

@@ -140,3 +140,5 @@ mongodb/
 
 docker
 docker/docker_build_commands.txt
+whisper-diarization
+test-data/example-001.m4a

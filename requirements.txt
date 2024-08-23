@@ -4,6 +4,4 @@ pika
 minio
 regex
 numpy
-# torch
-# torchvision
-# torchaudio
+typing_extensions
